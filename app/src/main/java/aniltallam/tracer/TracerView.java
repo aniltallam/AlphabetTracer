@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -43,6 +44,8 @@ public class TracerView extends View {
 
     public void setDataHandler(TracerDataHandler tracerDataHandler) {
         dataHandler = tracerDataHandler;
+        int padding = BG_CURVE_WIDTH/2 + 3;
+        dataHandler.readyData(this.getWidth(), this.getHeight(), this.getPaddingLeft()+padding, getPaddingTop()+padding, getPaddingRight()+padding, getPaddingBottom()+padding);
         drawBgCurve();
         invalidate();
     }
@@ -217,7 +220,6 @@ public class TracerView extends View {
                 float midX = (x1 + x2) / 2.0f;
                 float midY = (y1 + y2) / 2.0f;
                 sPath.moveTo(x1, y1);
-
                 sPath.quadTo(x1, y1, midX, midY);
                 sPath.lineTo(x2, y2);
                 //mCanvas.drawPath(mPath, mPathPaint); //save to bitmap
