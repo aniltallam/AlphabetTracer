@@ -1,6 +1,7 @@
 package aniltallam.tracer;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
 
@@ -9,11 +10,30 @@ import java.util.Stack;
  */
 
 public class TracerUtil {
+    public static double[][] convertDouble(List<Point> points)
+    {
+        double[][] ret = new double[points.size()][];
+        for (int i = 0; i < points.size(); i++)
+        {
+            ret[i] = new double[]{points.get(i).x, points.get(i).y};
+        }
+        return ret;
+    }
+    public static double[][][] data;
+    public static void saveData(ArrayList<Point> points, ArrayList<Integer> strokes){
+        data = new double[strokes.size()][][];
+
+        for (int i = 0; i < strokes.size(); i++) {
+            int start = strokes.get(i);
+            int end = i +1 < strokes.size()? strokes.get(i+1) : points.size();
+            data [i] = convertDouble(points.subList(start, end));
+        }
+    }
     public static ArrayList<Point> spacePoints(Stack<Stack<Point>> rawPoints, ArrayList<Point> points, ArrayList<Integer> strokes){
 //        ArrayList<Point> points = new ArrayList<>();
         for (Stack<Point> ps: rawPoints){
             strokes.add(points.size());
-            spacePoints(ps,50, points, 1,0,0);
+            spacePoints(ps,30, points, 1,0,0);
         }
         return points;
     }

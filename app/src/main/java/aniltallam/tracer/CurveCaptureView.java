@@ -74,7 +74,7 @@ public class CurveCaptureView extends View {
         pathPaint.setColor(Color.parseColor("#9FE503"));
         pathPaint.setStyle(Paint.Style.STROKE);
         pathPaint.setStrokeJoin(Paint.Join.ROUND);
-        pathPaint.setStrokeCap(Paint.Cap.ROUND);
+        pathPaint.setStrokeCap(Paint.Cap.SQUARE);
         pathPaint.setStrokeWidth(CURVE_WIDTh);
 
         tempPathPaint = new Paint(pathPaint);
@@ -133,6 +133,13 @@ public class CurveCaptureView extends View {
     public void clear() {
         mBitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
         mCanvas.setBitmap(mBitmap);
+        points.clear();
+        path.reset();
+        points_f = new float[0];
+        tempPath.reset();
+        tempCircle = null;
+        spacePoints.clear();
+        strokes.clear();
         invalidate();
     }
 
@@ -156,14 +163,18 @@ public class CurveCaptureView extends View {
         }
         return true;
     }
-
+    int drawMode = 0;
     Stack<Stack<Point>> points = new Stack<>();
     private void touch_start(float x, float y) {
-        Stack<Point> ps = new Stack<>();
-        ps.push(new Point(x,y));
-        points.push(ps);
-        isDrawing = true;
-        drawCircle(x, y);
+        if(drawMode == 0) {
+            Stack<Point> ps = new Stack<>();
+            ps.push(new Point(x, y));
+            points.push(ps);
+            isDrawing = true;
+            drawCircle(x, y);
+        } else if(drawMode == 1){
+
+        }
     }
 
     private void touch_move(float x, float y) {
@@ -179,8 +190,8 @@ public class CurveCaptureView extends View {
             eraseTempLine();
             isDrawing = false;
 
-            ArrayList<Point> spacePoints = new ArrayList<>();
-            ArrayList<Integer> strokes = new ArrayList<>();
+            spacePoints.clear();
+            strokes.clear();
             TracerUtil.spacePoints(this.points, spacePoints, strokes);
 
             points_f = new float[spacePoints.size() * 2];
@@ -218,6 +229,9 @@ public class CurveCaptureView extends View {
         }
     }
 
+    ArrayList<Point> spacePoints = new ArrayList<>();
+    ArrayList<Integer> strokes = new ArrayList<>();
+
     private void eraseTempCircle() {
         tempCircle = null;
     }
@@ -240,5 +254,9 @@ public class CurveCaptureView extends View {
     private boolean checkForTouchTolerence(float x, float y) {
         float dx = Math.abs(x - prevX), dy = Math.abs(y - prevY);
         return !(dx <= TOUCH_TOLERANCE && dy <= TOUCH_TOLERANCE);
+    }
+
+    public void save() {
+        TracerUtil.saveData(spacePoints,strokes);
     }
 }

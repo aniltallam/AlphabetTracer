@@ -1,5 +1,6 @@
 package aniltallam.tracer;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -35,5 +36,17 @@ public class CaptureActivity extends AppCompatActivity {
     public void delete(View view){
         CaptureView cview = (CaptureView) findViewById(R.id.cview);
         cview.undo();
+    }
+    public void clear(View view){
+        CurveCaptureView cview = (CurveCaptureView) findViewById(R.id.cview);
+        cview.clear();
+    }
+
+    public void save(View view){
+        CurveCaptureView cview = (CurveCaptureView) findViewById(R.id.cview);
+        cview.save();
+
+        Intent intent = new Intent(this, TracerActivity.class);
+        startActivity(intent);
     }
 }

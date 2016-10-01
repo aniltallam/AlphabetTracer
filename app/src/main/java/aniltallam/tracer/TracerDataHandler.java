@@ -60,6 +60,7 @@ public class TracerDataHandler {
                                 {79.549513, 117.71854}
                         }
                 };
+        a = TracerUtil.data;
         double minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
         double maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
 
