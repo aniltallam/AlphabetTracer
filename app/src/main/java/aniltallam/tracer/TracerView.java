@@ -7,21 +7,19 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import java.util.ArrayList;
-
 /**
  * Created by anil on 7/9/16.
  */
 public class TracerView extends View {
-    final static int POINT_WIDTH = 10, BG_CURVE_WIDTH = 45, CURVE_WIDTh = 22;
-    TracerDataHandler dataHandler;
+    private final static int POINT_WIDTH = 10, BG_CURVE_WIDTH = 45, CURVE_WIDTH = 22;
+    TracerDataHelper dataHelper;
     boolean pathStarted = false;
+    TracerData data;
     private Bitmap mBitmap;
     private Canvas mCanvas;
     private Path bgPath, mPath, arrowPath, sPath;
@@ -42,10 +40,12 @@ public class TracerView extends View {
         init();
     }
 
-    public void setDataHandler(TracerDataHandler tracerDataHandler) {
-        dataHandler = tracerDataHandler;
-        int padding = BG_CURVE_WIDTH/2 + 3;
-        dataHandler.readyData(this.getWidth(), this.getHeight(), this.getPaddingLeft()+padding, getPaddingTop()+padding, getPaddingRight()+padding, getPaddingBottom()+padding);
+    public void setData(TracerData tracerData) {
+        clearPoints();
+        int offset = BG_CURVE_WIDTH/2 + 3;
+        this.data = tracerData;
+        TracerUtil.scalePoints(tracerData, this.getWidth(), this.getHeight(), this.getPaddingLeft()+offset, getPaddingTop()+offset, getPaddingRight()+offset, getPaddingBottom()+offset);
+        dataHelper = new TracerDataHelper(tracerData);
         drawBgCurve();
         invalidate();
     }
@@ -65,7 +65,7 @@ public class TracerView extends View {
         mPathPaint.setStyle(Paint.Style.STROKE);
         mPathPaint.setStrokeJoin(Paint.Join.ROUND);
         mPathPaint.setStrokeCap(Paint.Cap.ROUND);
-        mPathPaint.setStrokeWidth(CURVE_WIDTh);
+        mPathPaint.setStrokeWidth(CURVE_WIDTH);
 
         bgCurvePaint = new Paint(mPathPaint);
         bgCurvePaint.setColor(Color.LTGRAY);
@@ -94,19 +94,20 @@ public class TracerView extends View {
         canvas.drawPath(sPath, mPathPaint);
         canvas.drawPath(mPath, mPathPaint);
 
-        if (dataHandler != null) {
-            if (dataHandler.hasUndrawnStroke() && dataHandler.getCurrStroke().hasUnconnectedPoint()) {
-                Point cp = dataHandler.getCurrStroke().getCurrPoint();
+        if (dataHelper != null) {
+            if (dataHelper.hasUnconnectedPoint()) {
+
+                Point cp = dataHelper.currPoint();
 
                 mSpecialPointPaint.setColor(Color.BLACK);
-                mSpecialPointPaint.setStrokeWidth(CURVE_WIDTh);
+                mSpecialPointPaint.setStrokeWidth(CURVE_WIDTH);
                 canvas.drawPoint(cp.x, cp.y, mSpecialPointPaint);
 
                 mSpecialPointPaint.setColor(Color.RED);
                 mSpecialPointPaint.setStrokeWidth(POINT_WIDTH);
                 canvas.drawPoint(cp.x, cp.y, mSpecialPointPaint);
 
-                Point np = dataHandler.getCurrStroke().getNextPoint();
+                Point np = dataHelper.nextPoint();
 
                 fillArrow(canvas, cp.x, cp.y, np.x, np.y);
             }
@@ -115,14 +116,25 @@ public class TracerView extends View {
 
     private void fillArrow(Canvas canvas, float x0, float y0, float x1, float y1) {
 
-        int arrowHeadLenght = 20;
+        int arrowHeadLength = 20;
         int arrowHeadAngle = 30;
-        int length = 3;
-        x1 = x0 + (x1 - x0) * length;
-        y1 = y0 + (y1 - y0) * length;
+        int minlength = 60;
+        int maxlength = 100;
+        double pointsDistance = Math.sqrt(Math.pow((x1 - x0), 2) + Math.pow((y1 - y0), 2));
+        double arrowLength;
+        if(pointsDistance > maxlength)  {
+            arrowLength = maxlength;
+        } else if(pointsDistance < minlength){
+            arrowLength = minlength;
+        } else {
+            arrowLength = pointsDistance;
+        }
+        float factor = (float) (arrowLength/pointsDistance);
+        x1 = (1 - factor) * x0 + factor * x1;
+        y1 = (1 - factor) * y0 + factor * y1;
 
-        float[] linePts = new float[]{x1 - arrowHeadLenght, y1, x1, y1};
-        float[] linePts2 = new float[]{x1, y1, x1, y1 + arrowHeadLenght};
+        float[] linePts = new float[]{x1 - arrowHeadLength, y1, x1, y1};
+        float[] linePts2 = new float[]{x1, y1, x1, y1 + arrowHeadLength};
         Matrix rotateMat = new Matrix();
 
         //get the center of the line
@@ -153,10 +165,10 @@ public class TracerView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        clear();
+        clearCanvas();
     }
 
-    public void clear() {
+    public void clearCanvas() {
         mBitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
         mCanvas.setBitmap(mBitmap);
         sPath.reset();
@@ -167,15 +179,15 @@ public class TracerView extends View {
     }
 
     public void clearPath() {
-        if (dataHandler != null) {
-            dataHandler.rewind();
+        if (dataHelper != null) {
+            dataHelper.rewind();
         }
-        clear();
+        clearCanvas();
     }
 
     public void clearPoints() {
-        dataHandler = null;
-        clearPath();
+        dataHelper = null;
+        clearCanvas();
     }
 
     @Override
@@ -200,10 +212,9 @@ public class TracerView extends View {
     }
 
     private void touch_start(float x, float y) {
-        if (dataHandler != null && dataHandler.hasUndrawnStroke()) {
+        if (dataHelper != null && dataHelper.hasUnconnectedPoint()) {
 
-            TracerDataHandler.Stroke currStroke = dataHandler.getCurrStroke();
-            if (currStroke.hasUnconnectedPoint() && currStroke.isCurrPoint(x, y)) {
+            if (dataHelper.hasUnconnectedPoint() && dataHelper.isCurrPoint(x, y)) {
                 mPath.reset();
                 pathStarted = true;
             }
@@ -212,11 +223,11 @@ public class TracerView extends View {
 
     private void touch_move(float x, float y) {
         if (pathStarted) {
-            TracerDataHandler.Stroke currStroke = dataHandler.getCurrStroke();
-            if (currStroke.isNextPoint(x, y)) {
+//            TracerDataHandler.Stroke currStroke = dataHelper.getCurrStroke();
+            if (dataHelper.isNextPoint(x, y)) {
                 mPath.reset();
-                float x1 = currStroke.getCurrPoint().x, y1 = currStroke.getCurrPoint().y,
-                        x2 = currStroke.getNextPoint().x, y2 = currStroke.getNextPoint().y;
+                float x1 = dataHelper.currPoint().x, y1 = dataHelper.currPoint().y,
+                        x2 = dataHelper.nextPoint().x, y2 = dataHelper.nextPoint().y;
                 float midX = (x1 + x2) / 2.0f;
                 float midY = (y1 + y2) / 2.0f;
                 sPath.moveTo(x1, y1);
@@ -225,19 +236,20 @@ public class TracerView extends View {
                 //mCanvas.drawPath(mPath, mPathPaint); //save to bitmap
                 //mPath.reset();
 
-                currStroke.moveToNextPoint();
-                if (!currStroke.hasUnconnectedPoint()) {
+                dataHelper.moveToNextPoint();
+                if (dataHelper.isStrokeCompleted()) {
                     sPath.reset();
-                    drawQuadCurve(currStroke, sPath);
+                    int[] bounds = dataHelper.justCompletedStrokeData();
+                    TracerUtil.drawQuadCurve(data.points, bounds[0], bounds[1], sPath);
                     mCanvas.drawPath(sPath, mPathPaint); //save to bitmap
                     sPath.reset();
 
-                    dataHandler.moveToNextStroke();
+                    dataHelper.moveToNextPoint();  // moves to next stroke's (if exists) start point.
                     pathStarted = false;
                 }
             } else {
                 mPath.reset();
-                mPath.moveTo(currStroke.getCurrPoint().x, currStroke.getCurrPoint().y);
+                mPath.moveTo(dataHelper.currPoint().x, dataHelper.currPoint().y);
                 mPath.lineTo(x, y);
             }
         }
@@ -249,76 +261,17 @@ public class TracerView extends View {
         }
     }
 
-    void drawQuadCurve(TracerDataHandler.Stroke str, Path path) {
-        ArrayList<Point> points = str.getAllPoints();
-        Point prevPoint = null;
-        for (int i = 0; i < points.size(); i++) {
-            Point point = points.get(i);
-
-            if (i == 0) {
-                path.moveTo(point.x, point.y);
-            } else {
-                float midX = (prevPoint.x + point.x) / 2;
-                float midY = (prevPoint.y + point.y) / 2;
-
-                if (i == 1) {
-                    path.lineTo(midX, midY);
-                } else {
-                    path.quadTo(prevPoint.x, prevPoint.y, midX, midY);
-                }
-            }
-            prevPoint = point;
-        }
-        if (prevPoint != null)
-            path.lineTo(prevPoint.x, prevPoint.y);
-    }
-
-    void drawCubicCurve(TracerDataHandler.Stroke str, Path path) {
-        ArrayList<Point> points = str.getAllPoints();
-
-        if (points.size() > 1) {
-            for (int i = points.size() - 2; i < points.size(); i++) {
-                if (i >= 0) {
-                    Point point = points.get(i);
-
-                    if (i == 0) {
-                        Point next = points.get(i + 1);
-                        point.dx = ((next.x - point.x) / 3);
-                        point.dy = ((next.y - point.y) / 3);
-                    } else if (i == points.size() - 1) {
-                        Point prev = points.get(i - 1);
-                        point.dx = ((point.x - prev.x) / 3);
-                        point.dy = ((point.y - prev.y) / 3);
-                    } else {
-                        Point next = points.get(i + 1);
-                        Point prev = points.get(i - 1);
-                        point.dx = ((next.x - prev.x) / 3);
-                        point.dy = ((next.y - prev.y) / 3);
-                    }
-                }
-            }
-        }
-
-        boolean first = true;
-        for (int i = 0; i < points.size(); i++) {
-            Point point = points.get(i);
-            if (first) {
-                first = false;
-                path.moveTo(point.x, point.y);
-            } else {
-                Point prev = points.get(i - 1);
-                path.cubicTo(prev.x + prev.dx, prev.y + prev.dy, point.x - point.dx, point.y - point.dy, point.x, point.y);
-            }
-        }
-    }
-
     private void drawBgCurve() {
-        if (dataHandler == null)
+        if (dataHelper == null)
             return;
         Log.d("Tview", "bg drawing");
         Path path = bgPath;
-        for (TracerDataHandler.Stroke str : dataHandler.getStrokes()) {
-            drawQuadCurve(str, path);
+
+        for (int i = 0; i < data.strokes.size(); i++) {
+            int start = data.strokes.get(i);
+            int end = i < data.strokes.size() -1 ?
+                    data.strokes.get(i+1) : data.points.size();
+            TracerUtil.drawQuadCurve(data.points, start, end, path);
         }
 
         bgCurvePaint.setColor(Color.parseColor("#505050"));
@@ -333,7 +286,7 @@ public class TracerView extends View {
         path.offset(1, 1);
         mCanvas.drawPath(path, bgCurvePaint); //save to bitmap
 
-        for (Point point : dataHandler.getAllPoints()) {
+        for (Point point : data.points) {
             mCanvas.drawPoint(point.x, point.y, mPointsPaint);
         }
     }

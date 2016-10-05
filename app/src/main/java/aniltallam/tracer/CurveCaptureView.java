@@ -13,7 +13,6 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Stack;
 
 
@@ -24,19 +23,22 @@ import java.util.Stack;
 public class CurveCaptureView extends View {
     private static final float TOUCH_TOLERANCE = 20;
     private static final float POINT_WIDTH = 20;
-    private float CURVE_WIDTh = 30;
+    private static final float CURVE_WIDTH = 30;
 
-    private boolean isDrawing = false;
-    private boolean isStrokeInProgress = false;
-    //private CaptureDataHelper dataHelper;
-    private Bitmap mBitmap;
-    private Canvas mCanvas;
-    private Paint tempPathPaint, tempNodePaint, pathPaint, nodePaint, mBitmapPaint;
     Path tempPath, path;
 //    float[] points;
     Point tempCircle;
     float prevX, prevY;
-    private boolean isDataChanged = false;
+    int drawMode;
+    Stack<Stack<Point>> points;
+    ArrayList<Point> spacePoints;
+    ArrayList<Integer> strokes;
+    private boolean isDrawing;
+    //private CaptureDataHelper dataHelper;
+    private Bitmap mBitmap;
+    private Canvas mCanvas;
+    private Paint tempPathPaint, tempNodePaint, pathPaint, nodePaint, mBitmapPaint;
+//    private boolean isDataChanged = false;
     private float[] points_f;
 
     public CurveCaptureView(Context context) {
@@ -62,6 +64,13 @@ public class CurveCaptureView extends View {
 
     void init(){
 //        dataHelper = new CaptureDataHelper();
+        points = new Stack<>();
+        spacePoints = new ArrayList<>();
+        strokes = new ArrayList<>();
+
+        drawMode = 0;
+        isDrawing = false;
+
         mCanvas = new Canvas();
         points_f = new float[0];
         path = new Path();
@@ -75,7 +84,7 @@ public class CurveCaptureView extends View {
         pathPaint.setStyle(Paint.Style.STROKE);
         pathPaint.setStrokeJoin(Paint.Join.ROUND);
         pathPaint.setStrokeCap(Paint.Cap.SQUARE);
-        pathPaint.setStrokeWidth(CURVE_WIDTh);
+        pathPaint.setStrokeWidth(CURVE_WIDTH);
 
         tempPathPaint = new Paint(pathPaint);
 
@@ -93,6 +102,7 @@ public class CurveCaptureView extends View {
         tempNodePaint.setColor(Color.RED);
         tempNodePaint.setStrokeWidth(POINT_WIDTH * 2);
     }
+
     @Override
     protected void onDraw(Canvas canvas) {
         canvas.drawBitmap(mBitmap, 0, 0, mBitmapPaint);
@@ -105,7 +115,7 @@ public class CurveCaptureView extends View {
             path.reset();
             Point prev = null;
             for (int i = 0; i < dataHelper.points.size(); i++) {
-                if (dataHelper.stroke_indices.contains(i))
+                if (dataHelper.strokes.contains(i))
                     prev = null;
                 Point p = dataHelper.points.get(i);
                 if (prev != null) {
@@ -163,8 +173,7 @@ public class CurveCaptureView extends View {
         }
         return true;
     }
-    int drawMode = 0;
-    Stack<Stack<Point>> points = new Stack<>();
+
     private void touch_start(float x, float y) {
         if(drawMode == 0) {
             Stack<Point> ps = new Stack<>();
@@ -229,9 +238,6 @@ public class CurveCaptureView extends View {
         }
     }
 
-    ArrayList<Point> spacePoints = new ArrayList<>();
-    ArrayList<Integer> strokes = new ArrayList<>();
-
     private void eraseTempCircle() {
         tempCircle = null;
     }
@@ -258,5 +264,10 @@ public class CurveCaptureView extends View {
 
     public void save() {
         TracerUtil.saveData(spacePoints,strokes);
+    }
+
+    public void new1() {
+        init();
+        invalidate();
     }
 }

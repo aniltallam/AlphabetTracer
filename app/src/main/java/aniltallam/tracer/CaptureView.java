@@ -14,15 +14,12 @@ import android.view.View;
 
 import java.util.Stack;
 
-import static aniltallam.tracer.TracerView.CURVE_WIDTh;
-
 /**
  * Created by anil on 22/9/16.
  */
 
 public class CaptureView extends View {
-    private static final float TOUCH_TOLERANCE = 20;
-    private static final float POINT_WIDTH = 20;
+    private final static int TOUCH_TOLERANCE = 20, POINT_WIDTH = 20, CURVE_WIDTH = 22;
     private boolean isDrawing = false;
     private boolean isStrokeInProgress = false;
     private CaptureDataHelper dataHelper;
@@ -55,9 +52,10 @@ public class CaptureView extends View {
         super(context, attrs, defStyleAttr, defStyleRes);
         init();
     }
-
+    TracerData tracerData;
     void init(){
-        dataHelper = new CaptureDataHelper();
+        tracerData = new TracerData();
+        dataHelper = new CaptureDataHelper(tracerData);
         mCanvas = new Canvas();
         points = new float[0];
         path = new Path();
@@ -71,7 +69,7 @@ public class CaptureView extends View {
         pathPaint.setStyle(Paint.Style.STROKE);
         pathPaint.setStrokeJoin(Paint.Join.ROUND);
         pathPaint.setStrokeCap(Paint.Cap.ROUND);
-        pathPaint.setStrokeWidth(CURVE_WIDTh);
+        pathPaint.setStrokeWidth(CURVE_WIDTH);
 
         tempPathPaint = new Paint(pathPaint);
 
@@ -94,13 +92,13 @@ public class CaptureView extends View {
         if(tempCircle != null) canvas.drawPoint(tempCircle.x, tempCircle.y, tempNodePaint);
 
         if(isDataChanged) {
-            points = new float[dataHelper.points.size() * 2];
+            points = new float[tracerData.points.size() * 2];
             path.reset();
             Point prev = null;
-            for (int i = 0; i < dataHelper.points.size(); i++) {
-                if (dataHelper.stroke_indices.contains(i))
+            for (int i = 0; i < tracerData.points.size(); i++) {
+                if (tracerData.strokes.contains(i))
                     prev = null;
-                Point p = dataHelper.points.get(i);
+                Point p = tracerData.points.get(i);
                 if (prev != null) {
                     path.moveTo(prev.x, prev.y);
                     path.lineTo(p.x, p.y);

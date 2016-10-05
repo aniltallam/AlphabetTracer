@@ -1,7 +1,8 @@
 package aniltallam.tracer;
 
+import android.graphics.Path;
+
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
 
@@ -19,16 +20,45 @@ public class TracerUtil {
         }
         return ret;
     }
-    public static double[][][] data;
+    public static TracerData tracerData, prevTracerData;
     public static void saveData(ArrayList<Point> points, ArrayList<Integer> strokes){
-        data = new double[strokes.size()][][];
+        prevTracerData = tracerData;
+        tracerData = new TracerData(points, strokes);
+    }
 
-        for (int i = 0; i < strokes.size(); i++) {
-            int start = strokes.get(i);
-            int end = i +1 < strokes.size()? strokes.get(i+1) : points.size();
-            data [i] = convertDouble(points.subList(start, end));
+
+    public static void scalePoints(TracerData tracerData, int parentWidth, int parentHeight, int pLeft, int pTop, int pRight, int pBottom) {
+        double minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+        double maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+        if(tracerData.width == -1)
+            for (Point point : tracerData.points) {
+                double x = point.x, y = point.y;
+                if(x < minX) minX = x;
+                else if (x > maxX) maxX = x;
+                if(y < minY) minY = y;
+                else if (y > maxY) maxY = y;
+            }
+        else {
+            minX = 0; minY =0; maxX = tracerData.width; maxY = tracerData.height;
+        }
+
+        double w = maxX - minX;
+        double h = maxY - minY;
+
+        double targetWidth = parentWidth - pLeft - pRight;
+        double targetHeight = parentHeight - pTop - pBottom;
+        double hscale = targetWidth / w;
+        double vscale = targetHeight / h;
+
+        double scale = Math.min(hscale,vscale);
+        double xOffset = pLeft/scale-minX;
+        double yOffset = pTop/scale-minY;
+        for (Point p : tracerData.points) {
+            p.x = (float) ((p.x + xOffset) * scale);
+            p.y = (float) ((p.y + yOffset) * scale);
         }
     }
+
     public static ArrayList<Point> spacePoints(Stack<Stack<Point>> rawPoints, ArrayList<Point> points, ArrayList<Integer> strokes){
 //        ArrayList<Point> points = new ArrayList<>();
         for (Stack<Point> ps: rawPoints){
@@ -37,6 +67,7 @@ public class TracerUtil {
         }
         return points;
     }
+
     public static ArrayList<Point> spacePoints(double[][] pointsArray, float minSpacing, double scale, double xOffset, double yOffset) {
         ArrayList<Point> spacedPoints = new ArrayList<>();
         Float x0 = null, y0 = null, length = 0f;
@@ -139,5 +170,74 @@ public class TracerUtil {
             y0 = y1;
         }
         return spacedPoints;
+    }
+
+    public static void drawQuadCurve(List<Point> points, Path path) {
+        int start = 0;
+        int end = points.size();
+        drawQuadCurve(points, start, end, path);
+    }
+    public static void drawQuadCurve(List<Point> points, int start, int end, Path path) {
+        Point prevPoint = null;
+        for (int i = start; i < end; i++) {
+            Point point = points.get(i);
+
+            if (i == start) {
+                path.moveTo(point.x, point.y);
+            } else {
+                float midX = (prevPoint.x + point.x) / 2;
+                float midY = (prevPoint.y + point.y) / 2;
+
+                if (i == start + 1) {
+                    path.lineTo(midX, midY);
+                } else {
+                    path.quadTo(prevPoint.x, prevPoint.y, midX, midY);
+                }
+            }
+            prevPoint = point;
+        }
+        if (prevPoint != null)
+            path.lineTo(prevPoint.x, prevPoint.y);
+    }
+
+    void drawCubicCurve(List<Point> points, Path path) {
+        if (points.size() > 1) {
+            for (int i = points.size() - 2; i < points.size(); i++) {
+                if (i >= 0) {
+                    Point point = points.get(i);
+
+                    if (i == 0) {
+                        Point next = points.get(i + 1);
+                        point.dx = ((next.x - point.x) / 3);
+                        point.dy = ((next.y - point.y) / 3);
+                    } else if (i == points.size() - 1) {
+                        Point prev = points.get(i - 1);
+                        point.dx = ((point.x - prev.x) / 3);
+                        point.dy = ((point.y - prev.y) / 3);
+                    } else {
+                        Point next = points.get(i + 1);
+                        Point prev = points.get(i - 1);
+                        point.dx = ((next.x - prev.x) / 3);
+                        point.dy = ((next.y - prev.y) / 3);
+                    }
+                }
+            }
+        }
+
+        boolean first = true;
+        for (int i = 0; i < points.size(); i++) {
+            Point point = points.get(i);
+            if (first) {
+                first = false;
+                path.moveTo(point.x, point.y);
+            } else {
+                Point prev = points.get(i - 1);
+                path.cubicTo(prev.x + prev.dx, prev.y + prev.dy, point.x - point.dx, point.y - point.dy, point.x, point.y);
+            }
+        }
+    }
+
+    public static boolean checkPoint(float x, float y, Point p, int tolerance) {
+        return !(Math.abs(p.x - x) > tolerance || Math.abs(p.y - y) > tolerance);
     }
 }

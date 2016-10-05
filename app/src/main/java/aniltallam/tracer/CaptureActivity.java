@@ -37,6 +37,12 @@ public class CaptureActivity extends AppCompatActivity {
         CaptureView cview = (CaptureView) findViewById(R.id.cview);
         cview.undo();
     }
+
+    public void new1(View view){
+        CurveCaptureView cview = (CurveCaptureView) findViewById(R.id.cview);
+        cview.new1();
+    }
+
     public void clear(View view){
         CurveCaptureView cview = (CurveCaptureView) findViewById(R.id.cview);
         cview.clear();
