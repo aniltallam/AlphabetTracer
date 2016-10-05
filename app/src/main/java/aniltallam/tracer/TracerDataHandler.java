@@ -23,7 +23,7 @@ public class TracerDataHandler {
 //        fillData();
     }
 
-    public void readyData(int parentWidth, int parentHeight, int paddingLeft, int paddingTop, int paddingRight, int paddingBottom){
+    public void readyData(int parentWidth, int parentHeight, int paddingLeft, int paddingTop, int paddingRight, int paddingBottom) {
         double[][][] a =
                 {
                         {
@@ -67,9 +67,9 @@ public class TracerDataHandler {
         for (double[][] stroke : a) {
             for (double[] point : stroke) {
                 double x = point[0], y = point[1];
-                if(x < minX) minX = x;
+                if (x < minX) minX = x;
                 else if (x > maxX) maxX = x;
-                if(y < minY) minY = y;
+                if (y < minY) minY = y;
                 else if (y > maxY) maxY = y;
             }
         }
@@ -80,10 +80,10 @@ public class TracerDataHandler {
         double hscale = (parentWidth - paddingLeft - paddingRight) / w;
         double vscale = (parentHeight - paddingTop - paddingBottom) / h;
 
-        double scale = Math.min(hscale,vscale);
+        double scale = Math.min(hscale, vscale);
 
         for (double[][] points : a) {
-            strokes.add(new Stroke(points, scale, paddingLeft/scale-minX, paddingTop/scale-minY));
+            strokes.add(new Stroke(points, scale, paddingLeft / scale - minX, paddingTop / scale - minY));
         }
     }
 

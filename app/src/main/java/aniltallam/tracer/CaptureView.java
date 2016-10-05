@@ -20,16 +20,21 @@ import java.util.Stack;
 
 public class CaptureView extends View {
     private final static int TOUCH_TOLERANCE = 20, POINT_WIDTH = 20, CURVE_WIDTH = 22;
+    Path tempPath, path;
+    float[] points;
+    Point tempCircle;
+    float prevX, prevY;
+    TracerData tracerData;
+    Point moveNode;
+    Stack<Integer> actionStack = new Stack<>();
+    int lineDrawStyle = 0;
+    int drawMode = 0;
     private boolean isDrawing = false;
     private boolean isStrokeInProgress = false;
     private CaptureDataHelper dataHelper;
     private Bitmap mBitmap;
     private Canvas mCanvas;
     private Paint tempPathPaint, tempNodePaint, pathPaint, nodePaint, mBitmapPaint;
-    Path tempPath, path;
-    float[] points;
-    Point tempCircle;
-    float prevX, prevY;
     private boolean isDataChanged = false;
 
     public CaptureView(Context context) {
@@ -52,8 +57,8 @@ public class CaptureView extends View {
         super(context, attrs, defStyleAttr, defStyleRes);
         init();
     }
-    TracerData tracerData;
-    void init(){
+
+    void init() {
         tracerData = new TracerData();
         dataHelper = new CaptureDataHelper(tracerData);
         mCanvas = new Canvas();
@@ -84,14 +89,15 @@ public class CaptureView extends View {
 
         tempNodePaint = new Paint(nodePaint);
     }
+
     @Override
     protected void onDraw(Canvas canvas) {
         canvas.drawBitmap(mBitmap, 0, 0, mBitmapPaint);
 
         canvas.drawPath(tempPath, tempPathPaint);
-        if(tempCircle != null) canvas.drawPoint(tempCircle.x, tempCircle.y, tempNodePaint);
+        if (tempCircle != null) canvas.drawPoint(tempCircle.x, tempCircle.y, tempNodePaint);
 
-        if(isDataChanged) {
+        if (isDataChanged) {
             points = new float[tracerData.points.size() * 2];
             path.reset();
             Point prev = null;
@@ -148,7 +154,7 @@ public class CaptureView extends View {
     }
 
     private void touch_start(float x, float y) {
-        if(drawMode == 0) {
+        if (drawMode == 0) {
             isDrawing = true;
             x = processX(x);
             y = processY(y);
@@ -158,18 +164,18 @@ public class CaptureView extends View {
             if (isStrokeInProgress) {
                 drawLineFromPrevSavedPoint(x, y);
             }
-        } else if (drawMode == 1){
-            moveNode = getNearByNode(x,y);
+        } else if (drawMode == 1) {
+            moveNode = getNearByNode(x, y);
         }
     }
-    Point moveNode;
+
     private Point getNearByNode(float x, float y) {
         return null;
 
     }
 
     private void touch_move(float x, float y) {
-        if(drawMode == 0) {
+        if (drawMode == 0) {
             if (isDrawing && checkForTouchTolerence(x, y)) {
                 x = processX(x);
                 y = processY(y);
@@ -178,8 +184,8 @@ public class CaptureView extends View {
                     drawLineFromPrevSavedPoint(x, y);
                 }
             }
-        } else if (drawMode == 1){
-            if (moveNode!=null && checkForTouchTolerence(x, y)) {
+        } else if (drawMode == 1) {
+            if (moveNode != null && checkForTouchTolerence(x, y)) {
                 drawCircle(x, y);
                 moveNode.x = x;
                 moveNode.y = y;
@@ -194,11 +200,11 @@ public class CaptureView extends View {
             y = processY(y);
             eraseTempCircle();
             eraseTempLine();
-            if(isStrokeInProgress){
-                dataHelper.addPoint(x,y);
+            if (isStrokeInProgress) {
+                dataHelper.addPoint(x, y);
             } else {
                 dataHelper.startNewStroke();
-                dataHelper.addPoint(x,y);
+                dataHelper.addPoint(x, y);
                 isStrokeInProgress = true;
             }
             actionStack.push(0);
@@ -206,14 +212,12 @@ public class CaptureView extends View {
         }
     }
 
-    Stack<Integer> actionStack = new Stack<>();
-
     private float processY(float y) {
-        if(dataHelper.currPoint() == null )
+        if (dataHelper.currPoint() == null)
             return y;
-        if(lineDrawStyle == 0 )
+        if (lineDrawStyle == 0)
             return y;
-        if(lineDrawStyle == 1 )  //vertical mode
+        if (lineDrawStyle == 1)  //vertical mode
             return y;
         if (lineDrawStyle == 2)  //horizontal mode
             return dataHelper.currPoint().y;
@@ -221,11 +225,11 @@ public class CaptureView extends View {
     }
 
     private float processX(float x) {
-        if(dataHelper.currPoint() == null )
+        if (dataHelper.currPoint() == null)
             return x;
-        if(lineDrawStyle == 0 )  //normal mode
+        if (lineDrawStyle == 0)  //normal mode
             return x;
-        if(lineDrawStyle == 1 )  //vertical mode
+        if (lineDrawStyle == 1)  //vertical mode
             return dataHelper.currPoint().x;
         if (lineDrawStyle == 2)  //horizontal mode
             return x;
@@ -248,35 +252,33 @@ public class CaptureView extends View {
         tempPath.reset();
         Point start = dataHelper.currPoint();
         tempPath.moveTo(start.x, start.y);
-        tempPath.lineTo(x,y);
+        tempPath.lineTo(x, y);
     }
 
-    int lineDrawStyle = 0;
-    public void setLineDrawStyle(int i){
+    public void setLineDrawStyle(int i) {
         lineDrawStyle = i;
     }
 
-    int drawMode = 0;
-    public void setDrawMode(int i){
+    public void setDrawMode(int i) {
         drawMode = i; // 0 - add, 1 - edit/move, 2 - delete
     }
 
-    public void breakStroke(){
+    public void breakStroke() {
         isStrokeInProgress = false;
         actionStack.push(1);
     }
 
-    public void continueStroke(){
+    public void continueStroke() {
         isStrokeInProgress = true;
         actionStack.push(1);
     }
 
-    public void undo(){
-        if(actionStack.isEmpty())
+    public void undo() {
+        if (actionStack.isEmpty())
             return;
-        if(actionStack.pop() == 0) {
+        if (actionStack.pop() == 0) {
             dataHelper.deletePoint();
-            if(dataHelper.isStrokeEmpty())
+            if (dataHelper.isStrokeEmpty())
                 isStrokeInProgress = false;
             isDataChanged = true;
             invalidate();

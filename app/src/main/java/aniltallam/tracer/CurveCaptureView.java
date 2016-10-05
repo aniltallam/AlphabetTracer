@@ -26,7 +26,7 @@ public class CurveCaptureView extends View {
     private static final float CURVE_WIDTH = 30;
 
     Path tempPath, path;
-//    float[] points;
+    //    float[] points;
     Point tempCircle;
     float prevX, prevY;
     int drawMode;
@@ -38,7 +38,7 @@ public class CurveCaptureView extends View {
     private Bitmap mBitmap;
     private Canvas mCanvas;
     private Paint tempPathPaint, tempNodePaint, pathPaint, nodePaint, mBitmapPaint;
-//    private boolean isDataChanged = false;
+    //    private boolean isDataChanged = false;
     private float[] points_f;
 
     public CurveCaptureView(Context context) {
@@ -62,7 +62,7 @@ public class CurveCaptureView extends View {
         init();
     }
 
-    void init(){
+    void init() {
 //        dataHelper = new CaptureDataHelper();
         points = new Stack<>();
         spacePoints = new ArrayList<>();
@@ -108,7 +108,7 @@ public class CurveCaptureView extends View {
         canvas.drawBitmap(mBitmap, 0, 0, mBitmapPaint);
 
         canvas.drawPath(tempPath, tempPathPaint);
-        if(tempCircle != null) canvas.drawPoint(tempCircle.x, tempCircle.y, tempNodePaint);
+        if (tempCircle != null) canvas.drawPoint(tempCircle.x, tempCircle.y, tempNodePaint);
 
         /*if(isDataChanged) {
             points = new float[dataHelper.points.size() * 2];
@@ -175,13 +175,13 @@ public class CurveCaptureView extends View {
     }
 
     private void touch_start(float x, float y) {
-        if(drawMode == 0) {
+        if (drawMode == 0) {
             Stack<Point> ps = new Stack<>();
             ps.push(new Point(x, y));
             points.push(ps);
             isDrawing = true;
             drawCircle(x, y);
-        } else if(drawMode == 1){
+        } else if (drawMode == 1) {
 
         }
     }
@@ -209,7 +209,7 @@ public class CurveCaptureView extends View {
             int pos = -1;
             for (int i = 0; i < spacePoints.size(); i++) {
                 if (strokes.contains(i)) {
-                    if(prev!= null)
+                    if (prev != null)
                         path.lineTo(prev.x, prev.y);
                     prev = null;
                     pos = 0;
@@ -224,7 +224,7 @@ public class CurveCaptureView extends View {
                     } else {
                         path.quadTo(prev.x, prev.y, midX, midY);
                     }
-                }else {
+                } else {
 //                    path.moveTo(prev.x, prev.y);
                     path.moveTo(p.x, p.y);
                 }
@@ -233,7 +233,7 @@ public class CurveCaptureView extends View {
                 prev = p;
                 pos++;
             }
-            if(prev!= null)
+            if (prev != null)
                 path.lineTo(prev.x, prev.y);
         }
     }
@@ -253,8 +253,8 @@ public class CurveCaptureView extends View {
     private void drawLineFromPrevSavedPoint(float x, float y) {
         Point start = points.peek().peek();
         tempPath.moveTo(start.x, start.y);
-        tempPath.lineTo(x,y);
-        points.peek().push(new Point(x,y));
+        tempPath.lineTo(x, y);
+        points.peek().push(new Point(x, y));
     }
 
     private boolean checkForTouchTolerence(float x, float y) {
@@ -263,7 +263,7 @@ public class CurveCaptureView extends View {
     }
 
     public void save() {
-        TracerUtil.saveData(spacePoints,strokes);
+        TracerUtil.saveData(spacePoints, strokes);
     }
 
     public void new1() {

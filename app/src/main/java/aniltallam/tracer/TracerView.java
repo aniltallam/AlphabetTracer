@@ -42,9 +42,9 @@ public class TracerView extends View {
 
     public void setData(TracerData tracerData) {
         clearPoints();
-        int offset = BG_CURVE_WIDTH/2 + 3;
+        int offset = BG_CURVE_WIDTH / 2 + 3;
         this.data = tracerData;
-        TracerUtil.scalePoints(tracerData, this.getWidth(), this.getHeight(), this.getPaddingLeft()+offset, getPaddingTop()+offset, getPaddingRight()+offset, getPaddingBottom()+offset);
+        TracerUtil.scalePoints(tracerData, this.getWidth(), this.getHeight(), this.getPaddingLeft() + offset, getPaddingTop() + offset, getPaddingRight() + offset, getPaddingBottom() + offset);
         dataHelper = new TracerDataHelper(tracerData);
         drawBgCurve();
         invalidate();
@@ -122,14 +122,14 @@ public class TracerView extends View {
         int maxlength = 100;
         double pointsDistance = Math.sqrt(Math.pow((x1 - x0), 2) + Math.pow((y1 - y0), 2));
         double arrowLength;
-        if(pointsDistance > maxlength)  {
+        if (pointsDistance > maxlength) {
             arrowLength = maxlength;
-        } else if(pointsDistance < minlength){
+        } else if (pointsDistance < minlength) {
             arrowLength = minlength;
         } else {
             arrowLength = pointsDistance;
         }
-        float factor = (float) (arrowLength/pointsDistance);
+        float factor = (float) (arrowLength / pointsDistance);
         x1 = (1 - factor) * x0 + factor * x1;
         y1 = (1 - factor) * y0 + factor * y1;
 
@@ -269,8 +269,8 @@ public class TracerView extends View {
 
         for (int i = 0; i < data.strokes.size(); i++) {
             int start = data.strokes.get(i);
-            int end = i < data.strokes.size() -1 ?
-                    data.strokes.get(i+1) : data.points.size();
+            int end = i < data.strokes.size() - 1 ?
+                    data.strokes.get(i + 1) : data.points.size();
             TracerUtil.drawQuadCurve(data.points, start, end, path);
         }
 
