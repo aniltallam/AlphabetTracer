@@ -1,5 +1,7 @@
 package aniltallam.tracer;
 
+import com.vimeo.stag.GsonAdapterKey;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,17 +10,21 @@ import java.util.List;
  */
 
 public class TracerData {
-    List<Point> points;
-    List<Integer> strokes;  //contains indexes of stroke's starting points.
-    float width = -1;
-    float height = -1;
+    @GsonAdapterKey
+    public ArrayList<Point> points;
+    @GsonAdapterKey
+    public ArrayList<Integer> strokes;  //contains indexes of stroke's starting points.
+    @GsonAdapterKey
+    public Float width;
+    @GsonAdapterKey
+    public Float height;
 
     public TracerData() {
         points = new ArrayList<>();
         strokes = new ArrayList<>();
     }
 
-    public TracerData(List<Point> points, List<Integer> stroke_indices) {
+    public TracerData(ArrayList<Point> points, ArrayList<Integer> stroke_indices) {
         this.points = points;
         this.strokes = stroke_indices;
     }

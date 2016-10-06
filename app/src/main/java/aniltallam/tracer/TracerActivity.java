@@ -14,12 +14,12 @@ public class TracerActivity extends AppCompatActivity {
 
     public void draw(View view){
         TracerView tracerView = (TracerView) findViewById(R.id.tview);
-        tracerView.setData(TracerUtil.tracerData);
+        tracerView.setData(TracerUtil.getData());
     }
 
     public void drawPrev(View view){
         TracerView tracerView = (TracerView) findViewById(R.id.tview);
-        tracerView.setData(TracerUtil.prevTracerData);
+        tracerView.setData(TracerUtil.getPrevData());
     }
 
     public void clearPath(View view){

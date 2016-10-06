@@ -41,13 +41,20 @@ public class TracerView extends View {
     }
 
     public void setData(TracerData tracerData) {
-        clearPoints();
-        int offset = BG_CURVE_WIDTH / 2 + 3;
+        if(tracerData == null)
+            return;
         this.data = tracerData;
-        TracerUtil.scalePoints(tracerData, this.getWidth(), this.getHeight(), this.getPaddingLeft() + offset, getPaddingTop() + offset, getPaddingRight() + offset, getPaddingBottom() + offset);
-        dataHelper = new TracerDataHelper(tracerData);
-        drawBgCurve();
-        invalidate();
+
+        if(this.getWidth() > 0) {
+            clearPoints();
+            int offset = BG_CURVE_WIDTH / 2 + 3;
+            TracerUtil.scalePoints(tracerData, this.getWidth(), this.getHeight(), this.getPaddingLeft() + offset, getPaddingTop() + offset, getPaddingRight() + offset, getPaddingBottom() + offset);
+            dataHelper = new TracerDataHelper(tracerData);
+            drawBgCurve();
+            invalidate();
+        } else {
+            dataHelper = new TracerDataHelper(tracerData);
+        }
     }
 
     private void init() {
@@ -165,6 +172,10 @@ public class TracerView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
+        if(data != null) {
+            int offset = BG_CURVE_WIDTH / 2 + 3;
+            TracerUtil.scalePoints(data, this.getWidth(), this.getHeight(), this.getPaddingLeft() + offset, getPaddingTop() + offset, getPaddingRight() + offset, getPaddingBottom() + offset);
+        }
         clearCanvas();
     }
 

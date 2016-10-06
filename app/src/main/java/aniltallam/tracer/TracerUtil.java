@@ -1,6 +1,11 @@
 package aniltallam.tracer;
 
 import android.graphics.Path;
+import android.util.Log;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.vimeo.stag.generated.Stag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,23 +25,46 @@ public class TracerUtil {
         }
         return ret;
     }
-
+    static String tracerString, prevTracerString;
     public static void saveData(ArrayList<Point> points, ArrayList<Integer> strokes) {
-        prevTracerData = tracerData;
-        tracerData = new TracerData(points, strokes);
+//        prevTracerData = tracerData;
+//        tracerData = new TracerData(points, strokes);
+
+        prevTracerString = tracerString;
+        tracerString = getGson().toJson(new TracerData(points, strokes), TracerData.class);
+        Log.d("Tracerutil", "Json data => \n " + tracerString);
+    }
+
+    public static TracerData getData(){
+        return getGson().fromJson(tracerString, TracerData.class);
+    }
+
+    public static TracerData getPrevData(){
+        return getGson().fromJson(prevTracerString, TracerData.class);
+    }
+
+    private static Gson gson = null;
+
+    public static Gson getGson() {
+        if (gson == null) {
+            gson = new GsonBuilder()
+                    .registerTypeAdapterFactory(new Stag.Factory())
+                    .create();
+        }
+        return gson;
     }
 
 
     public static void scalePoints(TracerData tracerData, int parentWidth, int parentHeight, int pLeft, int pTop, int pRight, int pBottom) {
         double minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
         double maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
-        if (tracerData.width == -1)
+        if (tracerData.width == null)
             for (Point point : tracerData.points) {
                 double x = point.x, y = point.y;
                 if (x < minX) minX = x;
-                else if (x > maxX) maxX = x;
+                if (x > maxX) maxX = x;
                 if (y < minY) minY = y;
-                else if (y > maxY) maxY = y;
+                if (y > maxY) maxY = y;
             }
         else {
             minX = 0;
@@ -54,8 +82,8 @@ public class TracerUtil {
         double vscale = targetHeight / h;
 
         double scale = Math.min(hscale, vscale);
-        double xOffset = pLeft / scale - minX;
-        double yOffset = pTop / scale - minY;
+        double xOffset = pLeft / scale - minX + Math.abs(targetWidth / scale - w) / 2;
+        double yOffset = pTop / scale - minY + Math.abs(targetHeight / scale - h) / 2;
         for (Point p : tracerData.points) {
             p.x = (float) ((p.x + xOffset) * scale);
             p.y = (float) ((p.y + yOffset) * scale);
