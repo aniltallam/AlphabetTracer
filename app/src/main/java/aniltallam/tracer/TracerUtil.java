@@ -16,7 +16,6 @@ import java.util.Stack;
  */
 
 public class TracerUtil {
-    public static TracerData tracerData, prevTracerData;
 
     public static double[][] convertDouble(List<Point> points) {
         double[][] ret = new double[points.size()][];
@@ -25,40 +24,29 @@ public class TracerUtil {
         }
         return ret;
     }
-    static String tracerString, prevTracerString;
-    public static void saveData(ArrayList<Point> points, ArrayList<Integer> strokes) {
-//        prevTracerData = tracerData;
-//        tracerData = new TracerData(points, strokes);
 
-        prevTracerString = tracerString;
-        tracerString = getGson().toJson(new TracerData(points, strokes), TracerData.class);
-        Log.d("Tracerutil", "Json data => \n " + tracerString);
-    }
-
-    public static TracerData getData(){
-        return getGson().fromJson(tracerString, TracerData.class);
-    }
-
-    public static TracerData getPrevData(){
-        return getGson().fromJson(prevTracerString, TracerData.class);
-    }
-
-    private static Gson gson = null;
-
-    public static Gson getGson() {
-        if (gson == null) {
-            gson = new GsonBuilder()
-                    .registerTypeAdapterFactory(new Stag.Factory())
-                    .create();
+    public static void calculateMinMax(TracerData tracerData){
+        if (tracerData.minX == null) {
+            float minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+            float maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+            for (Point point : tracerData.points) {
+                float x = point.x, y = point.y;
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+            }
+            tracerData.minX = minX;
+            tracerData.minY = minY;
+            tracerData.maxX = maxX;
+            tracerData.maxY = maxY;
         }
-        return gson;
     }
-
 
     public static void scalePoints(TracerData tracerData, int parentWidth, int parentHeight, int pLeft, int pTop, int pRight, int pBottom) {
         double minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
         double maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
-        if (tracerData.width == null)
+        if (tracerData.minX == null)
             for (Point point : tracerData.points) {
                 double x = point.x, y = point.y;
                 if (x < minX) minX = x;
@@ -67,10 +55,10 @@ public class TracerUtil {
                 if (y > maxY) maxY = y;
             }
         else {
-            minX = 0;
-            minY = 0;
-            maxX = tracerData.width;
-            maxY = tracerData.height;
+            minX = tracerData.minX;
+            minY = tracerData.minY;
+            maxX = tracerData.maxX;
+            maxY = tracerData.maxY;
         }
 
         double w = maxX - minX;
@@ -88,13 +76,25 @@ public class TracerUtil {
             p.x = (float) ((p.x + xOffset) * scale);
             p.y = (float) ((p.y + yOffset) * scale);
         }
+        tracerData.minX = (float) ((tracerData.minX + xOffset) * scale);
+        tracerData.maxX = (float) ((tracerData.maxX + xOffset) * scale);
+        tracerData.minY = (float) ((tracerData.minY + yOffset) * scale);
+        tracerData.maxY = (float) ((tracerData.maxY + yOffset) * scale);
     }
 
     public static ArrayList<Point> spacePoints(Stack<Stack<Point>> rawPoints, ArrayList<Point> points, ArrayList<Integer> strokes) {
 //        ArrayList<Point> points = new ArrayList<>();
+        float minSpacing = 25;
         for (Stack<Point> ps : rawPoints) {
             strokes.add(points.size());
-            spacePoints(ps, 30, points, 1, 0, 0);
+
+//            ArrayList<Point> temp = new ArrayList<>();
+//            spacePoints(ps, 25, temp, 1, 0, 0);
+
+//            ArrayList<Point> temp2 = new ArrayList<>();
+//            spacePoints(temp, 25, temp2, 1, 0, 0);
+
+            spacePoints(ps, 25, points, 1, 0, 0);
         }
         return points;
     }

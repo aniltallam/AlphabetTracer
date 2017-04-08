@@ -15,9 +15,13 @@ public class TracerData {
     @GsonAdapterKey
     public ArrayList<Integer> strokes;  //contains indexes of stroke's starting points.
     @GsonAdapterKey
-    public Float width;
+    public Float minX;
     @GsonAdapterKey
-    public Float height;
+    public Float minY;
+    @GsonAdapterKey
+    public Float maxX;
+    @GsonAdapterKey
+    public Float maxY;
 
     public TracerData() {
         points = new ArrayList<>();

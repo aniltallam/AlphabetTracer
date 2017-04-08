@@ -13,11 +13,11 @@
             android:layout_height="wrap_content"
             android:text="draw"
             android:onClick="draw"/>
-        <Button
+        <!--<Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="drawPrev"
-            android:onClick="drawPrev"/>
+            android:onClick="drawPrev"/>-->
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

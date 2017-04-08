@@ -21,9 +21,9 @@ import java.util.Stack;
  */
 
 public class CurveCaptureView extends View {
-    private static final float TOUCH_TOLERANCE = 20;
-    private static final float POINT_WIDTH = 20;
-    private static final float CURVE_WIDTH = 30;
+    private static final float TOUCH_TOLERANCE = 5;
+    private static final float POINT_WIDTH = 12;
+    private static final float CURVE_WIDTH = 20;
 
     Path tempPath, path;
     //    float[] points;
@@ -83,7 +83,7 @@ public class CurveCaptureView extends View {
         pathPaint.setColor(Color.parseColor("#9FE503"));
         pathPaint.setStyle(Paint.Style.STROKE);
         pathPaint.setStrokeJoin(Paint.Join.ROUND);
-        pathPaint.setStrokeCap(Paint.Cap.SQUARE);
+        pathPaint.setStrokeCap(Paint.Cap.ROUND);
         pathPaint.setStrokeWidth(CURVE_WIDTH);
 
         tempPathPaint = new Paint(pathPaint);
@@ -263,7 +263,11 @@ public class CurveCaptureView extends View {
     }
 
     public void save() {
-        TracerUtil.saveData(spacePoints, strokes);
+        CaptureUtil.saveData(spacePoints, strokes);
+    }
+
+    public TracerData getData() {
+        return new TracerData(new ArrayList<>(spacePoints), new ArrayList<>(strokes));
     }
 
     public void new1() {
